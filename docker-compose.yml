@@ -1,0 +1,44 @@
+# ============================================================
+# docker-compose.yml — Orquesta todos los servicios
+# ============================================================
+version: "3.8"
+
+services:
+  # ── Servidor C++ (principal + login) ──────────────────────
+  servidor:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: monitoreo-servidor
+    ports:
+      - "5000:5000" # Servidor principal (sensores + operadores)
+      - "6000:6000" # Login service
+    volumes:
+      - ./logs:/app/logs # Logs persistentes en el host
+      - ./database.db:/app/database.db # DB persistente
+    restart: unless-stopped
+    environment:
+      - TZ=America/Bogota
+
+  # ── Servidor HTTP / Dashboard web ─────────────────────────
+  web:
+    image: python:3.11-slim
+    container_name: monitoreo-web
+    working_dir: /app
+    command: python3 web_server.py
+    ports:
+      - "8080:8080" # Dashboard web (accesible desde browser)
+    volumes:
+      - ./web:/app # Código del servidor web
+      - ./database.db:/app/../database.db # Misma DB que el servidor
+    depends_on:
+      - servidor
+    environment:
+      - HTTP_PORT=8080
+      - DB_PATH=../database.db
+      - TZ=America/Bogota
+    restart: unless-stopped
+
+networks:
+  default:
+    name: monitoreo-net

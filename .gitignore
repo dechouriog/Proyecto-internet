@@ -1,0 +1,22 @@
+# Compilados
+server/servidor
+Login_service/login_service
+Login_service/users.db
+Login_service/log_sesiones
+
+# Base de datos principal
+database.db
+
+# Logs
+logs/*.log
+logs/*.txt
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.env
+
+# OS
+.DS_Store
+Thumbs.db
