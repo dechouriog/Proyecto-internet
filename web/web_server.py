@@ -1,9 +1,4 @@
 #!/usr/bin/env python3
-"""
-web_server.py — Servidor HTTP básico para el Sistema de Monitoreo Ambiental Urbano
-Requisito: interpretar cabeceras HTTP, manejar GET, devolver códigos de estado.
-Puerto: 80 (o 8080 si no hay permisos de root)
-"""
 import socket
 import threading
 import sqlite3
@@ -11,13 +6,13 @@ import json
 import os
 from datetime import datetime
 
-# ── Configuración ─────────────────────────────────────────────────────────────
+# ── Configuración ───────────────────────────────────────────
 HTTP_PORT = int(os.environ.get("HTTP_PORT", 8080))
-DB_PATH = os.environ.get("DB_PATH", "../database.db")
+DB_PATH = os.environ.get("DB_PATH", "database.db")
 SERVER_VER = "MonitoreoIoT/1.0"
 
 
-# ── Helpers DB ────────────────────────────────────────────────────────────────
+# ── Helpers DB ──────────────────────────────────────────────
 def query_db(sql, params=()):
     try:
         conn = sqlite3.connect(DB_PATH)
@@ -27,24 +22,26 @@ def query_db(sql, params=()):
         conn.close()
         return rows
     except Exception as e:
+        print(f"[DB ERROR] {e}")
         return []
 
 
 def get_system_data():
     sensores = query_db("SELECT id, tipo, zona, estado FROM sensores ORDER BY id")
+
     alertas = query_db(
         "SELECT a.id, a.sensor_id, s.tipo, a.nivel, a.mensaje, a.timestamp "
-        "FROM alertas a JOIN sensores s ON a.sensor_id=s.id ORDER BY a.id DESC LIMIT 20"
+        "FROM alertas a JOIN sensores s ON a.sensor_id=s.id "
+        "ORDER BY a.id DESC LIMIT 20"
     )
-    total_alertas = (
-        query_db("SELECT COUNT(*) as c FROM alertas")[0]["c"]
-        if query_db("SELECT COUNT(*) as c FROM alertas")
-        else 0
-    )
+
+    total_alertas_query = query_db("SELECT COUNT(*) as c FROM alertas")
+    total_alertas = total_alertas_query[0]["c"] if total_alertas_query else 0
+
     return sensores, alertas, total_alertas
 
 
-# ── Generador de respuestas HTTP ──────────────────────────────────────────────
+# ── HTTP Response ───────────────────────────────────────────
 def http_response(status_code, body, content_type="text/html; charset=utf-8"):
     reasons = {
         200: "OK",
@@ -52,7 +49,9 @@ def http_response(status_code, body, content_type="text/html; charset=utf-8"):
         404: "Not Found",
         405: "Method Not Allowed",
     }
+
     reason = reasons.get(status_code, "Unknown")
+
     headers = (
         f"HTTP/1.1 {status_code} {reason}\r\n"
         f"Content-Type: {content_type}\r\n"
@@ -61,12 +60,14 @@ def http_response(status_code, body, content_type="text/html; charset=utf-8"):
         f"Connection: close\r\n"
         f"\r\n"
     )
+
     return (headers + body).encode("utf-8")
 
 
-# ── Rutas ─────────────────────────────────────────────────────────────────────
+# ── Rutas ───────────────────────────────────────────────────
 def route_index():
     sensores, alertas, total_alertas = get_system_data()
+
     activos = sum(1 for s in sensores if s["estado"] == "activo")
     criticas = sum(1 for a in alertas if a["nivel"] == "high")
 
@@ -95,9 +96,11 @@ def route_index():
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     html_path = os.path.join(os.path.dirname(__file__), "index.html")
+
     if os.path.exists(html_path):
         with open(html_path, encoding="utf-8") as f:
             template = f.read()
+
         return (
             template.replace("{{ACTIVOS}}", str(activos))
             .replace("{{TOTAL}}", str(len(sensores)))
@@ -107,11 +110,13 @@ def route_index():
             .replace("{{FILAS_ALERTAS}}", filas_alertas)
             .replace("{{TIMESTAMP}}", now)
         )
-    return f"<h1>Error: index.html no encontrado</h1>"
+
+    return "<h1>Error: index.html no encontrado</h1>"
 
 
 def route_api_status():
     sensores, alertas, total_alertas = get_system_data()
+
     data = {
         "status": "online",
         "timestamp": datetime.now().isoformat(),
@@ -120,6 +125,7 @@ def route_api_status():
         "total_alertas": total_alertas,
         "alertas_criticas": sum(1 for a in alertas if a["nivel"] == "high"),
     }
+
     return json.dumps(data, indent=2)
 
 
@@ -131,12 +137,13 @@ def route_api_sensors():
 def route_api_alerts():
     alertas = query_db(
         "SELECT a.id, a.sensor_id, s.tipo, a.nivel, a.mensaje, a.timestamp "
-        "FROM alertas a JOIN sensores s ON a.sensor_id=s.id ORDER BY a.id DESC LIMIT 50"
+        "FROM alertas a JOIN sensores s ON a.sensor_id=s.id "
+        "ORDER BY a.id DESC LIMIT 50"
     )
     return json.dumps(alertas, indent=2)
 
 
-# ── Dispatcher ────────────────────────────────────────────────────────────────
+# ── Dispatcher ──────────────────────────────────────────────
 ROUTES = {
     "/": (route_index, "text/html; charset=utf-8"),
     "/index.html": (route_index, "text/html; charset=utf-8"),
@@ -146,42 +153,33 @@ ROUTES = {
 }
 
 
-# ── Handler de conexión ───────────────────────────────────────────────────────
+# ── Handler ─────────────────────────────────────────────────
 def handle_client(conn, addr):
     try:
         raw = b""
         conn.settimeout(5)
-        try:
-            while b"\r\n\r\n" not in raw:
-                chunk = conn.recv(1024)
-                if not chunk:
-                    break
-                raw += chunk
-        except:
-            pass
+
+        while b"\r\n\r\n" not in raw:
+            chunk = conn.recv(1024)
+            if not chunk:
+                break
+            raw += chunk
 
         if not raw:
             return
 
         request = raw.decode("utf-8", errors="replace")
         lines = request.split("\r\n")
-        if not lines:
-            conn.sendall(http_response(400, "<h1>400 Bad Request</h1>"))
-            return
 
-        # Parsear request line: "GET /path HTTP/1.1"
         parts = lines[0].split(" ")
         if len(parts) < 2:
             conn.sendall(http_response(400, "<h1>400 Bad Request</h1>"))
             return
 
         method, path = parts[0], parts[1]
-        # Ignorar query string
         path = path.split("?")[0]
 
-        print(
-            f"[{datetime.now().strftime('%H:%M:%S')}] {addr[0]}:{addr[1]} {method} {path}"
-        )
+        print(f"[HTTP] {addr[0]}:{addr[1]} {method} {path}")
 
         if method != "GET":
             conn.sendall(http_response(405, "<h1>405 Method Not Allowed</h1>"))
@@ -197,32 +195,27 @@ def handle_client(conn, addr):
     except Exception as e:
         print(f"[HTTP ERROR] {addr}: {e}")
     finally:
-        try:
-            conn.close()
-        except:
-            pass
+        conn.close()
 
 
-# ── Main ──────────────────────────────────────────────────────────────────────
+# ── Main ────────────────────────────────────────────────────
 def main():
     srv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     srv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
     srv.bind(("0.0.0.0", HTTP_PORT))
     srv.listen(20)
+
     print(f"[HTTP] Servidor web en http://0.0.0.0:{HTTP_PORT}")
-    print(f"[HTTP] DB: {os.path.abspath(DB_PATH)}")
+    print(f"[HTTP] DB usada: {os.path.abspath(DB_PATH)}")
+
     while True:
-        try:
-            conn, addr = srv.accept()
-            threading.Thread(
-                target=handle_client, args=(conn, addr), daemon=True
-            ).start()
-        except KeyboardInterrupt:
-            print("\n[HTTP] Detenido.")
-            break
-        except Exception as e:
-            print(f"[HTTP ERROR] {e}")
-    srv.close()
+        conn, addr = srv.accept()
+        threading.Thread(
+            target=handle_client,
+            args=(conn, addr),
+            daemon=True
+        ).start()
 
 
 if __name__ == "__main__":
