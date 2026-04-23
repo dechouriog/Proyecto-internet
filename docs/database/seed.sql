@@ -9,12 +9,12 @@ INSERT OR IGNORE INTO usuarios (username, password, role) VALUES
 
 -- Sensores (tokens únicos)
 INSERT OR IGNORE INTO sensores (id, tipo, zona, token, estado) VALUES
-('CO2-S01', 'co2',         'zona_centro',    'tk_co2_001',   'activo'),
-('RUI-S01', 'ruido',       'zona_comercial', 'tk_ruido_001', 'activo'),
-('TMP-S01', 'temperatura', 'parque_central', 'tk_tmp_001',   'activo'),
-('PM2-S01', 'pm25',        'via_principal',  'tk_pm25_001',  'activo'),
-('HUM-S01', 'humedad',     'zona_verde',     'tk_hum_001',   'activo'),
-('UVR-S01', 'uv',          'plaza_publica',  'tk_uv_001',    'activo');
+('CO2-S01', 'co2',         'zona_centro',    'token_co2_001', 'activo'),
+('RUI-S01', 'ruido',       'zona_comercial', 'token_rui_001', 'activo'),
+('TMP-S01', 'temperatura', 'parque_central', 'token_tmp_001', 'activo'),
+('PM2-S01', 'pm25',        'via_principal',  'token_pm2_001', 'activo'),
+('HUM-S01', 'humedad',     'zona_verde',     'token_hum_001', 'activo'),
+('UVR-S01', 'uv',          'plaza_publica',  'token_uvr_001', 'activo');
 
 -- Datos iniciales
 INSERT OR IGNORE INTO datos (sensor_id, valor) VALUES
