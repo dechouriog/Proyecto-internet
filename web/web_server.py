@@ -38,7 +38,15 @@ def get_system_data():
     total_alertas_query = query_db("SELECT COUNT(*) as c FROM alertas")
     total_alertas = total_alertas_query[0]["c"] if total_alertas_query else 0
 
-    return sensores, alertas, total_alertas
+    # Última lectura por sensor desde tabla datos
+    ultimas = query_db(
+        "SELECT d.sensor_id, d.valor, d.timestamp, s.tipo "
+        "FROM datos d JOIN sensores s ON d.sensor_id = s.id "
+        "WHERE d.id IN (SELECT MAX(id) FROM datos GROUP BY sensor_id)"
+    )
+    ultimas_map = {r["sensor_id"]: r for r in ultimas}
+
+    return sensores, alertas, total_alertas, ultimas_map
 
 
 # ── HTTP Response ───────────────────────────────────────────
@@ -65,8 +73,13 @@ def http_response(status_code, body, content_type="text/html; charset=utf-8"):
 
 
 # ── Rutas ───────────────────────────────────────────────────
+UNIDADES = {
+    "co2": "ppm", "ruido": "dB", "temperatura": "°C",
+    "pm25": "µg/m³", "humedad": "%", "uv": "idx"
+}
+
 def route_index():
-    sensores, alertas, total_alertas = get_system_data()
+    sensores, alertas, total_alertas, ultimas_map = get_system_data()
 
     activos = sum(1 for s in sensores if s["estado"] == "activo")
     criticas = sum(1 for a in alertas if a["nivel"] == "high")
@@ -74,10 +87,18 @@ def route_index():
     filas_sensores = ""
     for s in sensores:
         color = "#2ecc71" if s["estado"] == "activo" else "#e74c3c"
+        u = ultimas_map.get(s["id"])
+        if u:
+            unidad = UNIDADES.get(u["tipo"], "")
+            hora   = u["timestamp"].split(" ")[-1][:5] if u["timestamp"] else "--"
+            ultima = f"<span style='color:#69f0ae'>{round(u['valor'],1)} {unidad}</span> <span style='color:#4caf50;font-size:.8em'>({hora})</span>"
+        else:
+            ultima = "<span style='color:#555'>Sin datos</span>"
         filas_sensores += (
             f"<tr><td>{s['id']}</td><td>{s['tipo']}</td>"
             f"<td>{s['zona']}</td>"
-            f"<td style='color:{color};font-weight:bold'>{s['estado'].upper()}</td></tr>"
+            f"<td style='color:{color};font-weight:bold'>{s['estado'].upper()}</td>"
+            f"<td>{ultima}</td></tr>"
         )
 
     filas_alertas = ""
@@ -131,6 +152,15 @@ def route_api_status():
 
 def route_api_sensors():
     sensores = query_db("SELECT id, tipo, zona, estado FROM sensores ORDER BY id")
+    ultimas  = query_db(
+        "SELECT d.sensor_id, d.valor, d.timestamp FROM datos d "
+        "WHERE d.id IN (SELECT MAX(id) FROM datos GROUP BY sensor_id)"
+    )
+    um = {r["sensor_id"]: r for r in ultimas}
+    for s in sensores:
+        u = um.get(s["id"])
+        s["ultima_lectura"] = round(u["valor"], 2) if u else None
+        s["ultima_hora"]    = u["timestamp"] if u else None
     return json.dumps(sensores, indent=2)
 
 
