@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="es">
 <head>
   <meta charset="UTF-8">
@@ -10,38 +11,51 @@
     header { background:#0d2b14; border-bottom:2px solid #2e7d32; padding:18px 32px; display:flex; justify-content:space-between; align-items:center; }
     header h1 { font-size:1.5rem; color:#69f0ae; }
     header span { font-size:.85rem; color:#81c784; }
-    .stats { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; padding:24px 32px 0; }
-    .card { background:#0d2b14; border:1px solid #1b5e20; border-radius:8px; padding:20px; text-align:center; }
-    .card .num { font-size:2.2rem; font-weight:bold; color:#69f0ae; }
-    .card .num.red { color:#ef5350; }
-    .card .num.yellow { color:#ffb300; }
-    .card .label { font-size:.8rem; color:#81c784; margin-top:6px; text-transform:uppercase; letter-spacing:.05em; }
-    section { padding:24px 32px; }
-    section h2 { font-size:1rem; color:#69f0ae; border-bottom:1px solid #1b5e20; padding-bottom:8px; margin-bottom:14px; text-transform:uppercase; letter-spacing:.08em; }
-    table { width:100%; border-collapse:collapse; font-size:.88rem; }
-    th { background:#0d2b14; color:#69f0ae; padding:10px 12px; text-align:left; border-bottom:1px solid #2e7d32; }
-    td { padding:9px 12px; border-bottom:1px solid #1a3320; }
-    tr:hover td { background:#0f2e16; }
-    footer { text-align:center; padding:16px; font-size:.78rem; color:#4caf50; border-top:1px solid #1b5e20; }
-    .badge { display:inline-block; padding:2px 8px; border-radius:10px; font-size:.78rem; font-weight:bold; }
-    .badge.activo  { background:#1b5e20; color:#69f0ae; }
-    .badge.high    { background:#4a0000; color:#ef9a9a; }
-    .badge.medium  { background:#4a2f00; color:#ffcc80; }
-    .badge.low     { background:#0a2a0a; color:#a5d6a7; }
-    .refresh { font-size:.78rem; color:#4caf50; }
+
+```
+.stats { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; padding:24px 32px 0; }
+
+.card { background:#0d2b14; border:1px solid #1b5e20; border-radius:8px; padding:20px; text-align:center; }
+.card .num { font-size:2.2rem; font-weight:bold; color:#69f0ae; }
+.card .num.red { color:#ef5350; }
+.card .num.yellow { color:#ffb300; }
+.card .label { font-size:.8rem; color:#81c784; margin-top:6px; text-transform:uppercase; letter-spacing:.05em; }
+
+section { padding:24px 32px; }
+section h2 { font-size:1rem; color:#69f0ae; border-bottom:1px solid #1b5e20; padding-bottom:8px; margin-bottom:14px; text-transform:uppercase; letter-spacing:.08em; }
+
+table { width:100%; border-collapse:collapse; font-size:.88rem; }
+th { background:#0d2b14; color:#69f0ae; padding:10px 12px; text-align:left; border-bottom:1px solid #2e7d32; }
+td { padding:9px 12px; border-bottom:1px solid #1a3320; }
+tr:hover td { background:#0f2e16; }
+
+.reading { font-weight:bold; color:#4ade80; }
+
+footer { text-align:center; padding:16px; font-size:.78rem; color:#4caf50; border-top:1px solid #1b5e20; }
+
+.refresh { font-size:.78rem; color:#4caf50; }
+```
+
   </style>
+
   <script>
-    // Auto-refresh cada 10 segundos
     setTimeout(() => location.reload(), 10000);
   </script>
+
 </head>
+
 <body>
   <header>
     <div>
       <h1>🌿 Centro de Monitoreo Ambiental Urbano</h1>
-      <div style="font-size:.82rem;color:#81c784;margin-top:4px">Panel de Operador · Supervisión de calidad del aire</div>
+      <div style="font-size:.82rem;color:#81c784;margin-top:4px">
+        Panel de Operador · Supervisión de calidad del aire
+      </div>
     </div>
-    <span>Última actualización: {{TIMESTAMP}} &nbsp;|&nbsp; <span class="refresh">↻ auto-refresh 10s</span></span>
+    <span>
+      Última actualización: {{TIMESTAMP}} &nbsp;|&nbsp;
+      <span class="refresh">↻ auto-refresh 10s</span>
+    </span>
   </header>
 
   <div class="stats">
@@ -66,19 +80,42 @@
   <section>
     <h2>Sensores Registrados</h2>
     <table>
-      <thead><tr><th>ID</th><th>Tipo</th><th>Zona</th><th>Estado</th></tr></thead>
-      <tbody>{{FILAS_SENSORES}}</tbody>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Tipo</th>
+          <th>Zona</th>
+          <th>Estado</th>
+          <th>Última lectura</th> <!-- 👈 NUEVA COLUMNA -->
+        </tr>
+      </thead>
+      <tbody>
+        {{FILAS_SENSORES}} <!-- ahora debe incluir 5 columnas -->
+      </tbody>
     </table>
   </section>
 
   <section>
     <h2>Alertas Recientes</h2>
     <table>
-      <thead><tr><th>ID</th><th>Sensor</th><th>Tipo</th><th>Nivel</th><th>Mensaje</th><th>Hora</th></tr></thead>
-      <tbody>{{FILAS_ALERTAS}}</tbody>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Sensor</th>
+          <th>Tipo</th>
+          <th>Nivel</th>
+          <th>Mensaje</th>
+          <th>Hora</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{FILAS_ALERTAS}}
+      </tbody>
     </table>
   </section>
 
-  <footer>Sistema de Monitoreo Ambiental Urbano · IoT Distribuido · AWS EC2</footer>
+  <footer>
+    Sistema de Monitoreo Ambiental Urbano · IoT Distribuido · AWS EC2
+  </footer>
 </body>
 </html>
