@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 
 # =============================================================
-# VENTANA DE LOGIN
+# VENTANA DE LOGIN (Acceso Seguro)
 # =============================================================
 class LoginWindow:
     def __init__(self, root, client, on_success):
@@ -22,6 +22,7 @@ class LoginWindow:
         self.root.configure(bg="#060f0a")
         self._center()
 
+        # Paleta de colores inspirada en terminales de monitoreo (oscuro + verde esmeralda)
         self.C = {
             "bg": "#060f0a",
             "panel": "#0c1c10",
@@ -38,6 +39,7 @@ class LoginWindow:
         self._build()
 
     def _center(self):
+        """Calcula la posición para que la ventana aparezca justo en el centro de la pantalla."""
         self.root.update_idletasks()
         w, h = 480, 560
         x = (self.root.winfo_screenwidth() - w) // 2
@@ -45,11 +47,12 @@ class LoginWindow:
         self.root.geometry(f"{w}x{h}+{x}+{y}")
 
     def _build(self):
+        """Construye visualmente el formulario de acceso."""
         C = self.C
         outer = tk.Frame(self.root, bg=C["bg"])
         outer.pack(fill="both", expand=True, padx=40, pady=40)
 
-        # Logo
+        # Contenedor del Logo 
         logo_box = tk.Frame(
             outer,
             bg="#0d2e14",
