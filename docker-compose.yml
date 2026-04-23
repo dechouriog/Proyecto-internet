@@ -11,6 +11,7 @@ services:
       - "6000:6000"
     volumes:
       - ./logs:/app/logs
+      - db_data:/app/database.db   
     restart: unless-stopped
     environment:
       - TZ=America/Bogota
@@ -24,13 +25,17 @@ services:
       - "8080:8080"
     volumes:
       - ./web:/app
+      - db_data:/app/database.db   
     depends_on:
       - servidor
     environment:
       - HTTP_PORT=8080
-      - DB_PATH=../database.db
+      - DB_PATH=/app/database.db   
       - TZ=America/Bogota
     restart: unless-stopped
+
+volumes:
+  db_data:
 
 networks:
   default:
