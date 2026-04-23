@@ -33,8 +33,9 @@ RUN cd Login_service && make && echo "login_service compilado OK"
 # Crear directorios necesarios
 RUN mkdir -p logs
 
-# Inicializar base de datos desde schema + seed
-RUN sqlite3 database.db < docs/database/schema.sql && \
+# limpiar DB antes de crearla
+RUN rm -f database.db && \
+    sqlite3 database.db < docs/database/schema.sql && \
     sqlite3 database.db < docs/database/seed.sql && \
     echo "Base de datos inicializada"
 
