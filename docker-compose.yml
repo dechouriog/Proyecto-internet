@@ -15,6 +15,7 @@ services:
     restart: unless-stopped
     environment:
       - TZ=America/Bogota
+      - IOT_DB_PATH=/app/data/database.db
 
   web:
     image: python:3.11-slim
