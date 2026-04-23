@@ -14,7 +14,8 @@
 
 using namespace std;
 
-string DB_PATH = "../database.db";
+// DB_PATH: lee variable de entorno IOT_DB_PATH, si no existe usa ../database.db
+string DB_PATH = getenv("IOT_DB_PATH") ? string(getenv("IOT_DB_PATH")) : "../database.db";
 mutex log_mutex;
 mutex monitoreo_mutex;
 bool monitoreo_pausado = false;
