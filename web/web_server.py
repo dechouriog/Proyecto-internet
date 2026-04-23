@@ -8,7 +8,7 @@ from datetime import datetime
 
 # ── Configuración ───────────────────────────────────────────
 HTTP_PORT = int(os.environ.get("HTTP_PORT", 8080))
-DB_PATH = os.environ.get("DB_PATH", "database.db")
+DB_PATH = os.environ.get("DB_PATH", "/app/data/database.db")
 SERVER_VER = "MonitoreoIoT/1.0"
 
 
